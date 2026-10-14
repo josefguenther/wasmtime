@@ -151,6 +151,24 @@ mod not_for_windows {
     }
 
     #[test]
+    fn host_memory_with_data_segment() -> wasmtime::Result<()> {
+        let (mut store, _mem_creator) = config();
+        let module = Module::new(
+            store.engine(),
+            r#"
+            (module
+                (memory (export "memory") 2)
+                (data (i32.const 0x10000) "image")
+            )
+        "#,
+        )?;
+        let instance = Instance::new(&mut store, &module, &[])?;
+        let memory = instance.get_memory(&mut store, "memory").unwrap();
+        assert_eq!(&memory.data(&store)[0x10000..0x10005], b"image");
+        Ok(())
+    }
+
+    #[test]
     fn host_memory_grow() -> wasmtime::Result<()> {
         let (mut store, mem_creator) = config();
         let module = Module::new(
